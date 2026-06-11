@@ -1,0 +1,54 @@
+name: pre-commit checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  TFLINT_VERSION: v0.60.0
+  TERRAFORM_DOCS_VERSION: v0.21.0
+
+permissions:
+  contents: read
+
+jobs:
+  version-extract:
+    name: Extract Terraform min/max versions
+    runs-on: ubuntu-latest
+    outputs:
+      minVersion: ${{ steps.minMax.outputs.minVersion }}
+      maxVersion: ${{ steps.minMax.outputs.maxVersion }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Extract Terraform min/max versions
+        id: minMax
+        uses: clowdhaus/terraform-min-max@v3.0.1
+
+  pre-commit:
+    name: Pre-commit (Terraform ${{ matrix.version }})
+    needs: version-extract
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version:
+          - ${{ needs.version-extract.outputs.minVersion }}
+          - ${{ needs.version-extract.outputs.maxVersion }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Pre-commit checks
+        uses: clowdhaus/terraform-composite-actions/pre-commit@v1.14.0
+        with:
+          terraform-version: ${{ matrix.version }}
+          tflint-version: ${{ env.TFLINT_VERSION }}
+          terraform-docs-version: ${{ env.TERRAFORM_DOCS_VERSION }}
+          args: "--all-files --color always --show-diff-on-failure"
