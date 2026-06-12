@@ -46,14 +46,14 @@ output "gitlab_ci_snippet" {
       aud: ${var.aud_value}
   before_script:
     - >
-      STS_CREDS=$$(aws sts assume-role-with-web-identity
+      STS_CREDS=$(aws sts assume-role-with-web-identity
       --role-arn ${role.arn}
       --role-session-name "gitlab-$${CI_PROJECT_ID}-$${CI_PIPELINE_ID}"
       --web-identity-token "$${GITLAB_OIDC_TOKEN}"
       --duration-seconds ${var.gitlab_oidc_roles[key].max_session_duration}
       --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
       --output text)
-    - read -r AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN <<< "$$STS_CREDS"
+    - read -r AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN <<< "$STS_CREDS"
     - export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
     - aws sts get-caller-identity
 EOT

@@ -1,5 +1,9 @@
 # GitLab OIDC Terraform Module
 
+[![Terraform Registry](https://img.shields.io/badge/Terraform_Registry-mariansmolii%2Fgitlab--oidc%2Faws-7B42BC)](https://registry.terraform.io/modules/mariansmolii/gitlab-oidc/aws/latest)
+[![GitHub Release](https://img.shields.io/github/v/release/mariansmolii/terraform-aws-gitlab-oidc)](https://github.com/mariansmolii/terraform-aws-gitlab-oidc/releases)
+[![License](https://img.shields.io/github/license/mariansmolii/terraform-aws-gitlab-oidc)](https://github.com/mariansmolii/terraform-aws-gitlab-oidc/blob/main/LICENSE)
+
 Terraform module to create AWS IAM OIDC provider and roles for GitLab CI/CD pipelines authentication.
 
 ## Usage
@@ -14,7 +18,7 @@ module "gitlab_oidc" {
     production = {
       role_name   = "gitlab-production-role"
       description = "Role for GitLab CI/CD production deployments"
-      repo_paths  = ["my-org/my-app:ref_type:branch:ref:main", "my-org/my-app:ref_type:tag:ref:v*"]
+      repo_paths  = ["project_path:my-org/my-app:ref_type:branch:ref:main", "project_path:my-org/my-app:ref_type:tag:ref:v*"]
       match_field = "sub"
       policy_arns = ["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"]
       inline_policies = {
@@ -39,7 +43,7 @@ module "gitlab_oidc" {
     staging = {
       role_name            = "gitlab-staging-role"
       description          = "Role for GitLab CI/CD staging deployments"
-      repo_paths           = ["my-org/my-app:ref_type:branch:ref:develop"]
+      repo_paths           = ["project_path:my-org/my-app:ref_type:branch:ref:develop"]
       match_field          = "sub"
       policy_arns          = ["arn:aws:iam::aws:policy/PowerUserAccess"]
       max_session_duration = 3600
@@ -57,10 +61,27 @@ module "gitlab_oidc" {
 }
 ```
 
+## Matching GitLab projects (`sub` claim)
+
+With the default `match_field = "sub"`, each value in `repo_paths` is matched against the `sub` claim of the GitLab ID token using the `StringLike` operator (`*` wildcards are supported). The claim has the following format:
+
+```text
+project_path:{group}/{project}:ref_type:{branch|tag}:ref:{ref_name}
+```
+
+| `repo_paths` value | Grants access to |
+| ------------------ | ---------------- |
+| `project_path:my-org/my-app:ref_type:branch:ref:main` | the `main` branch of `my-org/my-app` |
+| `project_path:my-org/my-app:ref_type:tag:ref:v*` | any tag starting with `v` in `my-org/my-app` |
+| `project_path:my-org/my-app:ref_type:branch:ref:*` | any branch of `my-org/my-app` |
+| `project_path:my-org/*:ref_type:branch:ref:main` | the `main` branch of any project in `my-org` |
+
+To match a different token claim instead (for example `project_path`, `namespace_path` or `environment`), set `match_field` to that claim name. See the [GitLab ID token documentation](https://docs.gitlab.com/ci/secrets/id_token_authentication/) for the full list of available claims.
+
+> [!WARNING]
+> Avoid overly broad patterns such as a bare `*` — on `gitlab.com` that would allow any project of any user to assume the role.
+
 <!-- BEGIN_TF_DOCS -->
-
-
-
 ## Requirements
 
 | Name | Version |
