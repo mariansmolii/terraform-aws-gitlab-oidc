@@ -1,0 +1,35 @@
+name: pre-commit autoupdate
+
+on:
+  schedule:
+    - cron: "0 17 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  autoupdate:
+    name: Update pre-commit hooks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run pre-commit autoupdate
+        run: pipx run pre-commit autoupdate
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "chore: update pre-commit hooks"
+          title: "chore: update pre-commit hooks"
+          body: |
+            Automated `pre-commit autoupdate`.
+
+            Bumps hook revisions in `.pre-commit-config.yaml` to their latest tags.
+          branch: chore/pre-commit-autoupdate
+          delete-branch: true

@@ -2,9 +2,6 @@ formatter: "markdown table"
 
 version: ""
 
-header-from: main.tf
-footer-from: ""
-
 recursive:
   enabled: false
   path: modules
@@ -14,9 +11,6 @@ sections:
   show: []
 
 content: |-
-  {{ .Header }}
-
-  {{ if .Module.Inputs }}
   {{ .Requirements }}
 
   {{ .Providers }}
@@ -28,7 +22,6 @@ content: |-
   {{ .Inputs }}
 
   {{ .Outputs }}
-  {{ end }}
 
 output:
   file: "README.md"

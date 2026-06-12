@@ -1,6 +1,6 @@
-# GitLab OIDC Provider for AWS
+# Complete example
 
-Terraform module to create AWS IAM OIDC provider and roles for GitLab CI/CD pipelines authentication.
+Complete example of the GitLab OIDC module: creates the IAM OIDC provider and roles with managed and inline policies for GitLab CI/CD pipelines authentication.
 
 ## Usage
 
@@ -14,7 +14,7 @@ terraform apply
 
 ```hcl
 module "gitlab_oidc" {
-  source = "../"
+  source = "../../"
 
   create_oidc_provider = true
 
@@ -22,7 +22,7 @@ module "gitlab_oidc" {
     production = {
       role_name   = "gitlab-production-role"
       description = "Role for GitLab CI/CD production deployments"
-      repo_paths  = ["my-org/my-app:ref_type:branch:ref:main", "my-org/my-app:ref_type:tag:ref:v*"]
+      repo_paths  = ["project_path:my-org/my-app:ref_type:branch:ref:main", "project_path:my-org/my-app:ref_type:tag:ref:v*"]
       match_field = "sub"
       policy_arns = ["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"]
       inline_policies = {
@@ -47,7 +47,7 @@ module "gitlab_oidc" {
     staging = {
       role_name            = "gitlab-staging-role"
       description          = "Role for GitLab CI/CD staging deployments"
-      repo_paths           = ["my-org/my-app:ref_type:branch:ref:develop"]
+      repo_paths           = ["project_path:my-org/my-app:ref_type:branch:ref:develop"]
       match_field          = "sub"
       policy_arns          = ["arn:aws:iam::aws:policy/PowerUserAccess"]
       max_session_duration = 3600
