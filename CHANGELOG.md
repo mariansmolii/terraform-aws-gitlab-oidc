@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/mariansmolii/terraform-aws-gitlab-oidc/compare/v1.0.0...v1.0.1) (2026-06-12)
+
+### Bug Fixes
+
+* add .terraform-docs.yml configuration for automated documentation generation ([#1](https://github.com/mariansmolii/terraform-aws-gitlab-oidc/issues/1)) ([21d9dd9](https://github.com/mariansmolii/terraform-aws-gitlab-oidc/commit/21d9dd901456a16bb470009d0b6729f353a778a1))
+
 ## 1.0.0 (2026-06-11)
 
 ### Features
