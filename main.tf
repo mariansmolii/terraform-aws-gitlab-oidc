@@ -1,15 +1,9 @@
-data "tls_certificate" "this" {
-  count = var.create_oidc_provider ? 1 : 0
-
-  url = var.gitlab_url
-}
-
 resource "aws_iam_openid_connect_provider" "this" {
   count = var.create_oidc_provider ? 1 : 0
 
   url             = var.gitlab_url
-  client_id_list  = [var.aud_value]
-  thumbprint_list = [data.tls_certificate.this[0].certificates[0].sha1_fingerprint]
+  client_id_list  = [local.aud_value]
+  thumbprint_list = var.thumbprint_list
   tags            = var.tags
 }
 
@@ -17,6 +11,13 @@ data "aws_iam_openid_connect_provider" "this" {
   count = var.create_oidc_provider ? 0 : 1
 
   arn = var.iam_openid_connect_provider_arn
+
+  lifecycle {
+    precondition {
+      condition     = var.iam_openid_connect_provider_arn != null
+      error_message = "iam_openid_connect_provider_arn must be set when create_oidc_provider is false"
+    }
+  }
 }
 
 data "aws_iam_policy_document" "this" {
@@ -27,11 +28,11 @@ data "aws_iam_policy_document" "this" {
 
     principals {
       type        = "Federated"
-      identifiers = [try(aws_iam_openid_connect_provider.this[0].arn, data.aws_iam_openid_connect_provider.this[0].arn)]
+      identifiers = [local.oidc_provider_arn]
     }
     condition {
       test     = "StringLike"
-      variable = "${try(aws_iam_openid_connect_provider.this[0].url, data.aws_iam_openid_connect_provider.this[0].url)}:${each.value.match_field}"
+      variable = "${local.oidc_provider_url}:${each.value.match_field}"
       values   = each.value.repo_paths
     }
   }
@@ -53,21 +54,17 @@ resource "aws_iam_role_policy_attachment" "this" {
   for_each = {
     for item in flatten([
       for role_key, role in var.gitlab_oidc_roles : [
-        for policy_arn in role.policy_arns : {
-          key        = "${role_key}-${basename(policy_arn)}"
-          role_name  = role.role_name
+        for policy_key, policy_arn in role.policies : {
+          key        = "${role_key}|${policy_key}"
+          role_key   = role_key
           policy_arn = policy_arn
         }
       ]
     ]) : item.key => item
   }
 
-  role       = each.value.role_name
+  role       = aws_iam_role.this[each.value.role_key].name
   policy_arn = each.value.policy_arn
-
-  depends_on = [
-    aws_iam_role.this
-  ]
 }
 
 resource "aws_iam_role_policy" "this" {
@@ -87,8 +84,4 @@ resource "aws_iam_role_policy" "this" {
   name   = each.value.policy_name
   role   = aws_iam_role.this[each.value.role_key].name
   policy = each.value.policy
-
-  depends_on = [
-    aws_iam_role.this
-  ]
 }

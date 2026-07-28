@@ -22,9 +22,23 @@ variable "gitlab_url" {
 }
 
 variable "aud_value" {
-  description = "The audience value to use for the OIDC provider"
+  description = "The audience value to use for the OIDC provider. Defaults to the value of gitlab_url when not set"
   type        = string
-  default     = "https://gitlab.com"
+  default     = null
+}
+
+variable "thumbprint_list" {
+  description = "A list of server certificate thumbprints for the OIDC provider. Leave null to let AWS validate the provider via its library of trusted root CAs. Only required when the GitLab instance uses a certificate issued by a private CA"
+  type        = list(string)
+  default     = null
+
+  validation {
+    condition = alltrue([
+      for t in coalesce(var.thumbprint_list, []) :
+      can(regex("^[0-9a-fA-F]{40}$", t))
+    ])
+    error_message = "Each thumbprint must be a 40-character hexadecimal SHA-1 fingerprint"
+  }
 }
 
 variable "gitlab_oidc_roles" {
@@ -34,7 +48,7 @@ variable "gitlab_oidc_roles" {
     description          = optional(string, null)
     repo_paths           = list(string)
     match_field          = optional(string, "sub")
-    policy_arns          = optional(list(string), [])
+    policies             = optional(map(string), {})
     inline_policies      = optional(map(string), {})
     max_session_duration = optional(number, 3600)
     role_path            = optional(string, "/")
@@ -56,6 +70,14 @@ variable "gitlab_oidc_roles" {
       length(v.repo_paths) > 0
     ])
     error_message = "repo_paths must contain at least one path"
+  }
+
+  validation {
+    condition = alltrue([
+      for k, v in var.gitlab_oidc_roles :
+      length(distinct(values(v.policies))) == length(values(v.policies))
+    ])
+    error_message = "policies must not contain duplicate policy ARNs within a role"
   }
 }
 
