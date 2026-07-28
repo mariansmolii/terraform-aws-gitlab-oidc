@@ -24,16 +24,12 @@ output "oidc_roles_ids" {
 
 output "oidc_provider_arn" {
   description = "The ARN of the IAM OIDC provider"
-  value       = try(aws_iam_openid_connect_provider.this[0].arn, null)
+  value       = local.oidc_provider_arn
 }
 
 output "oidc_provider_url" {
   description = "The URL of the IAM OIDC provider"
-  value = try(
-    aws_iam_openid_connect_provider.this[0].url,
-    data.aws_iam_openid_connect_provider.this[0].url,
-    null
-  )
+  value       = local.oidc_provider_url
 }
 
 output "gitlab_ci_snippet" {
@@ -43,7 +39,7 @@ output "gitlab_ci_snippet" {
 .assume_aws_role_${key}:
   id_tokens:
     GITLAB_OIDC_TOKEN:
-      aud: ${var.aud_value}
+      aud: ${local.aud_value}
   before_script:
     - >
       STS_CREDS=$(aws sts assume-role-with-web-identity

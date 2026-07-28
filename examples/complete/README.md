@@ -24,7 +24,9 @@ module "gitlab_oidc" {
       description = "Role for GitLab CI/CD production deployments"
       repo_paths  = ["project_path:my-org/my-app:ref_type:branch:ref:main", "project_path:my-org/my-app:ref_type:tag:ref:v*"]
       match_field = "sub"
-      policy_arns = ["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"]
+      policies = {
+        ecr = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+      }
       inline_policies = {
         s3-write = jsonencode({
           Version = "2012-10-17"
@@ -45,11 +47,13 @@ module "gitlab_oidc" {
     }
 
     staging = {
-      role_name            = "gitlab-staging-role"
-      description          = "Role for GitLab CI/CD staging deployments"
-      repo_paths           = ["project_path:my-org/my-app:ref_type:branch:ref:develop"]
-      match_field          = "sub"
-      policy_arns          = ["arn:aws:iam::aws:policy/PowerUserAccess"]
+      role_name   = "gitlab-staging-role"
+      description = "Role for GitLab CI/CD staging deployments"
+      repo_paths  = ["project_path:my-org/my-app:ref_type:branch:ref:develop"]
+      match_field = "sub"
+      policies = {
+        power-user = "arn:aws:iam::aws:policy/PowerUserAccess"
+      }
       max_session_duration = 3600
       role_path            = "/gitlab/"
       role_tags = {
